@@ -6,6 +6,7 @@ import (
 )
 
 type Asset struct {
-	IP  net.IP   `json:"ip"`
-	URL *url.URL `json:"url"`
+	IP  net.IP            `json:"ip"`
+	URL *url.URL          `json:"url"`
+	Raw map[string]string `json:"raw"`
 }

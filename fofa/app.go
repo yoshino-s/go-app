@@ -37,17 +37,26 @@ func (f *FofaApp) Setup(context.Context) {
 	}
 }
 
-func (a *FofaApp) Query(query string, page int, size int) ([]Asset, error) {
+func (a *FofaApp) Query(query string, page int, size int, options ...WithQueryOption) ([]Asset, error) {
 	url, err := url.Parse(a.config.Endpoint + "/search/all")
 	if err != nil {
 		return nil, err
+	}
+
+	queryOptions := &queryOptions{
+		fields: []string{
+			"host", "ip", "port", "protocol",
+		},
+	}
+	for _, opt := range options {
+		opt(queryOptions)
 	}
 
 	qBase64 := base64.StdEncoding.EncodeToString([]byte(query))
 
 	queryParams := url.Query()
 	queryParams.Set("email", a.config.Email)
-	queryParams.Set("fields", "host,ip,port,protocol")
+	queryParams.Set("fields", strings.Join(queryOptions.fields, ","))
 	queryParams.Set("full", "false")
 	queryParams.Set("key", a.config.Key)
 	queryParams.Set("page", fmt.Sprintf("%d", page))
@@ -77,10 +86,15 @@ func (a *FofaApp) Query(query string, page int, size int) ([]Asset, error) {
 	res := make([]Asset, 0, len(resp.Results))
 
 	for _, item := range resp.Results {
-		host := item[0]
-		ip := item[1]
-		port := item[2]
-		protocol := item[3]
+		rawMap := make(map[string]string)
+		for i, field := range queryOptions.fields {
+			rawMap[field] = item[i]
+		}
+
+		host := rawMap["host"]
+		ip := net.ParseIP(rawMap["ip"])
+		port := rawMap["port"]
+		protocol := rawMap["protocol"]
 
 		if protocol == "" {
 			if port == "443" {
@@ -104,8 +118,9 @@ func (a *FofaApp) Query(query string, page int, size int) ([]Asset, error) {
 		}
 
 		res = append(res, Asset{
-			IP:  net.ParseIP(ip),
+			IP:  ip,
 			URL: url,
+			Raw: rawMap,
 		})
 	}
 
