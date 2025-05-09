@@ -48,7 +48,7 @@ func newConfig(opts []Option) *config {
 		loggingEnabled: true,
 	}
 
-	if dsn, ok := os.LookupEnv("UPTRACE_DSN"); ok {
+	if dsn, ok := os.LookupEnv("OTEL_EXPORTER_OTLP_ENDPOINT"); ok {
 		conf.dsn = dsn
 	}
 
@@ -71,10 +71,9 @@ func (fn option) apply(conf *config) {
 	fn(conf)
 }
 
-// WithDSN configures a data source name that is used to connect to Uptrace, for example,
-// `https://<token>@uptrace.dev/<project_id>`.
+// WithDSN configures a data source name that is used to connect to Otlp
 //
-// The default is to use UPTRACE_DSN environment variable.
+// The default is to use OTEL_EXPORTER_OTLP_ENDPOINT environment variable.
 func WithDSN(dsn string) Option {
 	return option(func(conf *config) {
 		conf.dsn = dsn

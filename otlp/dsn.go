@@ -40,7 +40,7 @@ func (dsn *DSN) OTLPHttpEndpoint() string {
 
 func ParseDSN(dsnStr string) (*DSN, error) {
 	if dsnStr == "" {
-		return nil, fmt.Errorf("DSN is empty (use WithDSN or UPTRACE_DSN env var)")
+		return nil, fmt.Errorf("DSN is empty (use WithDSN or OTEL_EXPORTER_OTLP_ENDPOINT env var)")
 	}
 
 	u, err := url.Parse(dsnStr)
