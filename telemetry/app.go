@@ -38,7 +38,9 @@ func New(ctx context.Context, opts ...Option) *OtlpApp {
 
 	atomicClient.Store(app)
 
-	app.setup(ctx)
+	if conf.dsn != "" {
+		app.setup(ctx)
+	}
 
 	return app
 }
@@ -202,8 +204,4 @@ func ReportPanic(ctx context.Context, val any) {
 
 func ForceFlush(ctx context.Context) error {
 	return activeClient().ForceFlush(ctx)
-}
-
-func TracerProvider() *sdktrace.TracerProvider {
-	return activeClient().TraceProvider
 }
