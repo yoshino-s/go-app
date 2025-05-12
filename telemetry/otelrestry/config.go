@@ -17,7 +17,6 @@ import (
 
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/propagation"
-	"go.opentelemetry.io/otel/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 )
 
@@ -109,7 +108,7 @@ func WithTracerProvider(provider oteltrace.TracerProvider) Option {
 
 // WithSpanOptions configures an additional set of
 // trace.SpanOptions, which are applied to each new span.
-func WithSpanOptions(opts ...trace.SpanStartOption) Option {
+func WithSpanOptions(opts ...oteltrace.SpanStartOption) Option {
 	return optionFunc(func(c *config) {
 		c.SpanStartOptions = append(c.SpanStartOptions, opts...)
 	})

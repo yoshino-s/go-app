@@ -19,7 +19,6 @@ import (
 	"go.opentelemetry.io/otel/propagation"
 	"go.opentelemetry.io/otel/semconv/v1.13.0/httpconv"
 	semconv "go.opentelemetry.io/otel/semconv/v1.4.0"
-	"go.opentelemetry.io/otel/trace"
 	oteltrace "go.opentelemetry.io/otel/trace"
 	"resty.dev/v3"
 )
@@ -61,7 +60,7 @@ func onBeforeRequest(tracer oteltrace.Tracer, cfg *config) resty.RequestMiddlewa
 
 func onAfterResponse(cfg *config) resty.ResponseMiddleware {
 	return func(c *resty.Client, res *resty.Response) error {
-		span := trace.SpanFromContext(res.Request.Context())
+		span := oteltrace.SpanFromContext(res.Request.Context())
 		span.SetAttributes(httpconv.ClientResponse(res.RawResponse)...)
 
 		// Setting request attributes here since res.Request.RawRequest is nil
@@ -76,7 +75,7 @@ func onAfterResponse(cfg *config) resty.ResponseMiddleware {
 
 func onError(cfg *config) resty.ErrorHook {
 	return func(req *resty.Request, err error) {
-		span := trace.SpanFromContext(req.Context())
+		span := oteltrace.SpanFromContext(req.Context())
 		span.RecordError(err)
 		span.SetStatus(codes.Error, err.Error())
 		span.SetName(cfg.SpanNameFormatter("", req))
