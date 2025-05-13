@@ -183,25 +183,27 @@ var (
 	atomicClient atomic.Value
 )
 
-func activeClient() *OtlpApp {
+func ActiveClient() *OtlpApp {
 	v := atomicClient.Load()
 	if v == nil {
+		return nil
 	}
 	return v.(*OtlpApp)
 }
 
-func TraceURL(span trace.Span) string {
-	return activeClient().TraceURL(span)
-}
-
-func ReportError(ctx context.Context, err error, opts ...trace.EventOption) {
-	activeClient().ReportError(ctx, err, opts...)
-}
-
-func ReportPanic(ctx context.Context, val any) {
-	activeClient().ReportPanic(ctx, val)
+// ReportError is a helper function to report an error as a span event.
+// If the current span is not recording, it creates a new dummy span and ends it immediately.
+// It returns the error to allow for further handling.
+func ReportError(ctx context.Context, err error, opts ...trace.EventOption) error {
+	span := trace.SpanFromContext(ctx)
+	if !span.IsRecording() {
+		_, span = ActiveClient().tracer.Start(ctx, dummySpanName)
+		defer span.End()
+	}
+	span.RecordError(err, opts...)
+	return err
 }
 
 func ForceFlush(ctx context.Context) error {
-	return activeClient().ForceFlush(ctx)
+	return ActiveClient().ForceFlush(ctx)
 }
