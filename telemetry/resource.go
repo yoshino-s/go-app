@@ -23,10 +23,6 @@ func (app *OtlpApp) newResource(ctx context.Context) *resource.Resource {
 		resource.WithFromEnv(),
 		resource.WithHost(),
 		resource.WithTelemetrySDK(),
-		resource.WithHostID(),
-		resource.WithOS(),
-		resource.WithProcess(),
-		resource.WithContainer(),
 		resource.WithDetectors(app.config.resourceDetectors...),
 		resource.WithAttributes(app.config.resourceAttributes...))
 	if err != nil {
