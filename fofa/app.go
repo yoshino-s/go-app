@@ -3,15 +3,14 @@ package fofa
 import (
 	"context"
 	"encoding/base64"
-	"encoding/json"
 	"fmt"
 	"net"
-	"net/http"
 	"net/url"
 	"strings"
 
 	"github.com/yoshino-s/go-framework/application"
 	"github.com/yoshino-s/go-framework/configuration"
+	"resty.dev/v3"
 )
 
 var _ application.Application = &FofaApp{}
@@ -19,11 +18,13 @@ var _ application.Application = &FofaApp{}
 type FofaApp struct {
 	*application.EmptyApplication
 	config config
+	client *resty.Client
 }
 
 func New() *FofaApp {
 	return &FofaApp{
 		EmptyApplication: application.NewEmptyApplication("Fofa"),
+		client:           resty.New(),
 	}
 }
 
@@ -31,18 +32,13 @@ func (f *FofaApp) Configuration() configuration.Configuration {
 	return &f.config
 }
 
-func (f *FofaApp) Setup(context.Context) {
-	if err := f.check(); err != nil {
+func (f *FofaApp) Setup(ctx context.Context) {
+	if err := f.Check(ctx); err != nil {
 		panic(err)
 	}
 }
 
-func (a *FofaApp) Query(query string, page int, size int, options ...WithQueryOption) ([]Asset, error) {
-	url, err := url.Parse(a.config.Endpoint + "/search/all")
-	if err != nil {
-		return nil, err
-	}
-
+func (a *FofaApp) Query(ctx context.Context, query string, page int, size int, options ...WithQueryOption) ([]Asset, error) {
 	queryOptions := &queryOptions{
 		fields: []string{
 			"host", "ip", "port", "protocol",
@@ -52,30 +48,27 @@ func (a *FofaApp) Query(query string, page int, size int, options ...WithQueryOp
 		opt(queryOptions)
 	}
 
-	qBase64 := base64.StdEncoding.EncodeToString([]byte(query))
-
-	queryParams := url.Query()
-	queryParams.Set("email", a.config.Email)
-	queryParams.Set("fields", strings.Join(queryOptions.fields, ","))
-	queryParams.Set("full", "false")
-	queryParams.Set("key", a.config.Key)
-	queryParams.Set("page", fmt.Sprintf("%d", page))
-	queryParams.Set("qbase64", qBase64)
-	queryParams.Set("size", fmt.Sprintf("%d", size))
-	url.RawQuery = queryParams.Encode()
-
-	r, err := http.Get(url.String())
-	if err != nil {
-		return nil, err
-	}
-
 	var resp struct {
 		ErrMsg  string     `json:"errmsg"`
 		Error   bool       `json:"error"`
 		Results [][]string `json:"results"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
+	_, err := a.client.R().
+		SetContext(ctx).
+		SetQueryParams(map[string]string{
+			"email":   a.config.Email,
+			"key":     a.config.Key,
+			"fields":  strings.Join(queryOptions.fields, ","),
+			"full":    "false",
+			"page":    fmt.Sprintf("%d", page),
+			"size":    fmt.Sprintf("%d", size),
+			"qbase64": base64.StdEncoding.EncodeToString([]byte(query)),
+		}).
+		SetResult(&resp).
+		Get(a.config.Endpoint + "/search/all")
+
+	if err != nil {
 		return nil, err
 	}
 
@@ -127,27 +120,22 @@ func (a *FofaApp) Query(query string, page int, size int, options ...WithQueryOp
 	return res, nil
 }
 
-func (a *FofaApp) check() error {
-	url, err := url.Parse(a.config.Endpoint + "/info/my")
-	if err != nil {
-		return err
-	}
-	query := url.Query()
-	query.Set("email", a.config.Email)
-	query.Set("key", a.config.Key)
-	url.RawQuery = query.Encode()
-
-	r, err := http.Get(url.String())
-	if err != nil {
-		return err
-	}
-
+func (a *FofaApp) Check(ctx context.Context) error {
 	var resp struct {
 		ErrMsg string `json:"errmsg"`
 		Error  bool   `json:"error"`
 	}
 
-	if err := json.NewDecoder(r.Body).Decode(&resp); err != nil {
+	_, err := a.client.R().
+		SetContext(ctx).
+		SetQueryParams(map[string]string{
+			"email": a.config.Email,
+			"key":   a.config.Key,
+		}).
+		SetResult(&resp).
+		Get(a.config.Endpoint + "/info/my")
+
+	if err != nil {
 		return err
 	}
 
