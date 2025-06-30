@@ -27,7 +27,7 @@ func (db *BadgerApp) Configuration() configuration.Configuration {
 	return &db.config
 }
 
-func (db *BadgerApp) BeforeSetup(context.Context) {
+func (db *BadgerApp) Initialize(context.Context) {
 	db.DB = utils.Must(badger.Open(badger.DefaultOptions(db.config.Path).WithLogger(&logger{db.Logger.Sugar()})))
 }
 

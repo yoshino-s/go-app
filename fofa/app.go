@@ -32,7 +32,7 @@ func (f *FofaApp) Configuration() configuration.Configuration {
 	return &f.config
 }
 
-func (f *FofaApp) Setup(ctx context.Context) {
+func (f *FofaApp) Initialize(ctx context.Context) {
 	if err := f.Check(ctx); err != nil {
 		panic(err)
 	}

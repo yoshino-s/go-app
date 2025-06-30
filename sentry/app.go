@@ -10,24 +10,24 @@ import (
 	"go.uber.org/zap"
 )
 
-var _ application.Application = &Telemetry{}
+var _ application.Application = &Sentry{}
 
-type Telemetry struct {
+type Sentry struct {
 	*application.EmptyApplication
 	config telemetryConfiguration
 }
 
-func New() *Telemetry {
-	return &Telemetry{
-		EmptyApplication: application.NewEmptyApplication("telemetry"),
+func New() *Sentry {
+	return &Sentry{
+		EmptyApplication: application.NewEmptyApplication("Sentry"),
 	}
 }
 
-func (t *Telemetry) Configuration() configuration.Configuration {
+func (t *Sentry) Configuration() configuration.Configuration {
 	return &t.config
 }
 
-func (t *Telemetry) BeforeSetup(context context.Context) {
+func (t *Sentry) Initialize(context context.Context) {
 	if t.config.SentryDSN != "" {
 		err := sentry.Init(sentry.ClientOptions{
 			Dsn:              t.config.SentryDSN,

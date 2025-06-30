@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"sync/atomic"
 
+	"github.com/yoshino-s/go-framework/application"
 	"go.opentelemetry.io/otel"
 	"go.opentelemetry.io/otel/attribute"
 	"go.opentelemetry.io/otel/propagation"
@@ -18,6 +19,7 @@ import (
 )
 
 type OtlpApp struct {
+	*application.EmptyApplication
 	config *config
 
 	dsn    *DSN
