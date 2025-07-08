@@ -33,7 +33,9 @@ type OtlpApp struct {
 }
 
 func New(ctx context.Context, opts ...Option) *OtlpApp {
-	app := &OtlpApp{}
+	app := &OtlpApp{
+		EmptyApplication: application.NewEmptyApplication("OtlpTelemetry"),
+	}
 
 	conf := newConfig(opts)
 	app.config = conf
